@@ -134,6 +134,8 @@ Factors:
 
 <!-- answer below -->
 
+
+
 ## Data preparation
 
 Based on your inspection of the `sw.wrangled` and `starwars` datasets and your answers to the above questions, use `dplyr`, `tidyr`, and `forcats` functions to prepare the dataset for visualization.
