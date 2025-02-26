@@ -117,24 +117,13 @@ Transfomations: I Selected specific columns: name, height, mass, hair_color, gen
 
 <!-- answer below -->
 
-Character variables: first_name, last_name, initials
-Numeric variables: height_in, height_cm, mass
-Factors: 
-  1. hair (unordered)
-    levels: "auburn", "auburn, grey", "auburn, white", "bald", "black", "blond", "blonde", "brown", "brown, grey", "grey", "none", "white"
-  2. gender (unordered )
-    levels: "f", "m", NA
-  3. species (unordered )
-    levels: 
-  4. homeworld (unordered)
-    levels: 
-
+Character variables: first_name, last_name, initials Numeric variables: height_in, height_cm, mass Factors: 1. hair (unordered) levels: "auburn", "auburn, grey", "auburn, white", "bald", "black", "blond", "blonde", "brown", "brown, grey", "grey", "none", "white" 2. gender (unordered ) levels: "f", "m", NA 3. species (unordered ) 4. homeworld (unordered)
 
 3.  Examine the `terrible-starwars.png` plot and consider its relationship to the `sw.wrangled` dataset. What structures of the dataset are mapped onto the plot? What parts of the plot are not data-dependent in the dataset? Are there any data-dependent elements of the plot that do not directly map from the dataset?
 
 <!-- answer below -->
 
-
+height_cm (x-axis), mass (y-axis), and gender are mapped onto the plot. Non-data-dependent elements include the pink background, grid styling, font choices and unclear titles. Data-dependent elements that don't directly map from the dataset but are derived from it include the regression lines, and the different y-axis scales for each facet panel.
 
 ## Data preparation
 
@@ -152,7 +141,7 @@ You will need to change the data types for some variables. You may also want to 
 ## to the original if needed
 
 
-sw.viz <- sw.wrangled %>%
+#sw.viz <- sw.wrangled %>%
   # Optionally, rename variables for clarity
 
 
@@ -161,6 +150,8 @@ sw.viz <- sw.wrangled %>%
 
   # Perform any other data preparation steps needed for visualization
 
+install.packages("ggh4x")
+library(ggh4x)
 
 ```
 
@@ -178,9 +169,13 @@ Before you begin, consider the following questions:
 
 <!-- answer below -->
 
+Convert gender to factor variables to enable faceting.
+
 2.  What geoms and aesthetics are used in this plot? Does layer order matter, and if so, how?
 
 <!-- answer below -->
+
+The plot used geom_point() to visualize individual data points and geom_smooth() to display overall trends within each gender category. The aes() function maps height_cm to the x-axis and mass to the y-axis. The The layer order is important - points should be plotted first, followed by regression lines.
 
 3.  What additional information is required to produce this plot? What layers or aesthetics would you need to add to the plot to include this information?
 
@@ -199,7 +194,138 @@ Before you begin, consider the following questions:
 # If you wrote the same code I did, you will probably get a warning and/or message (not an error)
 # If you do, note whether you want to ignore it or address it
 
-# sw.viz %>% ...
+#Assign the wrangled data to a new object
+
+
+# DATA PREPARATION
+sw.viz <- sw.wrangled %>%
+  mutate(
+    gender_label = case_when(
+      gender == "f" ~ "Female", # Convert 'f' to 'Female'
+      gender == "m" ~ "Male",   # Convert 'm' to 'Male' 
+      TRUE ~ "Other"            # All other values become 'Other'
+    ),
+    # Create factor with specific level order for plotting
+    gender_label = factor(gender_label, levels = c("Female", "Male", "Other"))
+  ) %>%
+  # Make sure height and mass are numeric values for plotting
+  mutate(
+    mass = as.numeric(mass),
+    height_cm = as.numeric(height_cm)
+  )
+
+# Create a list of custom y-axis scale definitions for each facet panel
+y_scales <- list(
+  # For the "Female" panel: 
+  Female = scale_y_continuous(breaks = seq(40, 70, 10), limits = c(40, 70)),
+  # For the "Male" panel:
+  Male = scale_y_continuous(breaks = seq(0, 1000, 500), limits = c(0, 1000)),
+  # For the "Other" panel:
+  Other = scale_y_continuous(breaks = seq(-400, 600, 200), limits = c(-400, 600))
+)
+
+# CREATE VISUALIZATION
+ggplot(sw.viz, aes(x = height_cm, y = mass)) +
+  
+  # Add points and regression lines
+  geom_point(aes(color = gender_label), size = 1.5, alpha = 0.5) +
+  geom_smooth(
+    aes(color = gender_label),
+    method = "lm",
+    se = TRUE,
+    alpha = 0.15,
+    size = 1,
+    fill = "blue"
+  ) +
+  
+  # Facet wrap with custom scales
+  facet_wrap(
+    ~gender_label, 
+    scales = "free_y",                           # Allow different y-scales for each facet
+    labeller = as_labeller(c(
+      Female = "Female",
+      Male = "Male",
+      Other = "Other"
+    ))
+  ) +
+  
+  scale_color_manual(
+    values = c(
+      "Female" = "maroon",                       # I tried to match the original colors
+      "Male" = "grey50",
+      "Other" = "orange"
+    )
+  ) +
+  
+  scale_x_continuous(
+    limits = c(60, 270),                         # Set x-axis range
+    breaks = seq(60, 270, by = 30)
+  ) +
+  
+  theme_minimal() +
+  theme(
+    # Keep overall background white
+    plot.background = element_rect(fill = "white", color = NA),
+    # Add pink background only to plot panels
+    panel.background = element_rect(fill = "#FFF0F0", color = NA),
+    # Add the facet header panels with dark green background
+    strip.background = element_rect(fill = "darkgreen", color = NA),
+    strip.text = element_text(
+      color = "white", # White text on green background
+      size = 10, 
+      hjust = 0,
+      family = "Courier"),
+  
+    axis.title = element_text(family = "Comic Sans MS"),      # Change font type 
+    
+    plot.title = element_text(
+      size = 14,
+      face = "plain",
+      family = "Comic Sans MS",
+      hjust = 0,                                              # Left alignment
+    ),
+    plot.subtitle = element_text(
+      size = 11,
+      face = "plain",
+      family = "Comic Sans MS", 
+      hjust = 0,                                              # Left alignment
+    ),
+
+    legend.position = "bottom",
+    legend.background = element_rect(fill = "#E6E6FA", color = NA),
+    legend.box.background = element_rect(fill = "#E6E6FA", color = NA),
+    legend.title = element_text(
+      size = 18,
+      family = "Brush Script MT"
+    ),
+    legend.text  = element_text(
+      family = "Comic Sans MS"
+    ),
+      
+    # Add panel border
+    panel.border = element_rect(color = "grey", fill = NA),
+    # Adjust grid lines, separate x and y grid lines
+    panel.grid.major.x = element_line(color = "white", linetype = "dashed"),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_line(color = "grey85", linetype = "dotdash"),
+    panel.grid.minor.y = element_blank(),
+    
+    axis.text.x = element_text(
+      angle = 45, 
+      family = "Comic Sans MS",
+      hjust = 1),
+    axis.text.y = element_text(
+      face = "bold.italic",
+      hjust = 1)
+  ) +
+  
+  labs(
+    title = "Height and weight across gender presentation",
+    subtitle = 'A cautionary tale in misleading "free" axis scales & bad design choices',
+    x = "Height (cm)",
+    y = "Mass (kg)",
+    color = "Gender Presentation"
+  )
 
 ```
 
@@ -209,7 +335,11 @@ Before you begin, consider the following questions:
 
 <!-- answer below -->
 
+I think I reproduced basically most parts of the bad plot. I spent a lot of time figuring out how to separate the y scales for each panel and set the grid lines into white for vertical line and grey for horizontal line. To be honest all minor details altogether took me a lot of time because I need to keep trying and debugging.
+
 2.  Were there any elements you were not able to reproduce? What additional information or skills would you need to complete the plot? What did you try, and why don't you think it worked?
+
+I think background color, font size, font colors, and the confidence interval shades are difficult to match. It's not hard to make them similar to the original but hard to make it exactly the same. I also don't know how to add the axis ticks.
 
 <!-- answer below -->
 
