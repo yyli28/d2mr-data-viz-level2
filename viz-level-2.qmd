@@ -175,13 +175,23 @@ Convert gender to factor variables to enable faceting.
 
 <!-- answer below -->
 
-The plot used geom_point() to visualize individual data points and geom_smooth() to display overall trends within each gender category. The aes() function maps height_cm to the x-axis and mass to the y-axis. The The layer order is important - points should be plotted first, followed by regression lines.
+The plot used geom_point() to visualize individual data points and geom_smooth() to display overall trends within each gender category. The aes() function maps height_cm to the x-axis and mass to the y-axis. The layer order is important - points should be plotted first, followed by regression lines.
 
 3.  What additional information is required to produce this plot? What layers or aesthetics would you need to add to the plot to include this information?
 
 <!-- answer below -->
 
+a.  Ensure proper faceting by gender
+b.  Create custom y-axis scales for each gender panel
+c.  Include custom fonts, colors, and background
+d.  Add a title and subtitle
+e.  Add grid line customizations
+
+<!-- -->
+
 4.  With as much specificity as possible, describe the appearance of the plot. What is the overall structure of the plot? What elements are included that are not data-dependent? What colors, shapes, and sizes are used? What's going on with the text and font? The axes? The grid? The legend? Anything else?
+
+It's a three-panel faceted plot divided by gender categories. Non-data-dependent elements include pink panel background, dark green facet headers, font choices, etc. 
 
 ```{r}
 
@@ -276,7 +286,7 @@ ggplot(sw.viz, aes(x = height_cm, y = mass)) +
       hjust = 0,
       family = "Courier"),
   
-    axis.title = element_text(family = "Comic Sans MS"),      # Change font type 
+    axis.title = element_text(family = "Comic Sans MS"),      # Change font type for axis title
     
     plot.title = element_text(
       size = 14,
@@ -367,17 +377,72 @@ What are the biggest issues with the very bad plot? Why are the bad? Which are m
 
 <!-- answer below -->
 
+font styles is not consistent, colors of the background and points lead to low contrast between them.
+
 ```{r}
 
 #| label: improved-plot
 
+# DATA PREPARATION
+sw.viz.improved <- sw.wrangled %>%
+  mutate(
+    gender_label = case_when(
+      gender == "f" ~ "Female",
+      gender == "m" ~ "Male",
+      TRUE ~ "Other"
+    ),
+    mass = as.numeric(mass),
+    height_cm = as.numeric(height_cm),
+    mass = ifelse(mass > 500, NA, mass)
+  ) %>%
+  filter(!is.na(mass), !is.na(height_cm))
 
+# DATA VISUALIZATION
+ggplot(sw.viz.improved, aes(x = height_cm, y = mass)) +
+  geom_point(aes(color = gender_label), alpha = 0.6) +
+  geom_smooth(
+    aes(color = gender_label),
+    method = "lm",
+    se = TRUE,
+    alpha = 0.2
+  ) +
 
+  facet_wrap(~gender_label, scales = "free_y") +
+  
+  scale_color_brewer(palette = "Set1") +
+  
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"),
+    plot.subtitle = element_text(
+      hjust = 0.5,
+      face = "bold"),
+    axis.title = element_text(
+      face = "bold"),
+    strip.text = element_text(
+      face = "bold"),
+    legend.title = element_text(
+      face = "bold")
+  )+
+  
+  labs(
+    title = "Character Height vs Mass by Gender",
+    subtitle = "Star Wars Characters",
+    x = "Height (cm)",
+    y = "Mass (kg)",
+    color = "Gender"
+  ) 
+  
 ```
 
 If you plotted an improvement, what did you do? Why? Were there any improvements you'd like to make that you weren't able to?
 
 <!-- answer below -->
+
+I focused on cleaning up the visual chaos of the original visualization while maintaining the core data insights. I removed the distracting design elements and used a color-blind friendly palette, making the graph easier to read and interpret. 
 
 # Submission & Assessment
 
