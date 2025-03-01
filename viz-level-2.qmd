@@ -150,8 +150,8 @@ You will need to change the data types for some variables. You may also want to 
 
   # Perform any other data preparation steps needed for visualization
 
-install.packages("ggh4x")
-library(ggh4x)
+# install.packages("ggh4x")
+# library(ggh4x)
 
 ```
 
